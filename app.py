@@ -42,7 +42,7 @@ with st.sidebar:
 
     st.divider()
 
-    uploaded_file = st.file_uploader("Nayi PDF add karo", type="pdf")
+    uploaded_file = st.file_uploader("Upload a new PDF", type="pdf")
     if uploaded_file is not None:
         save_path = os.path.join(DATA_DIR, uploaded_file.name)
         with open(save_path, "wb") as f:
@@ -104,6 +104,7 @@ def setup_agent():
             return f"Error evaluating expression: {e}"
 
     SYSTEM_PROMPT = """You are a helpful assistant with access to the user's uploaded documents.
+    ALWAYS respond in English only, regardless of the language the user writes in.
     When answering questions related to topics that might be in the user's documents,
     ALWAYS call search_documents FIRST and base your answer STRICTLY on the retrieved content.
     Do NOT use your own general knowledge to answer if search_documents returns relevant content.
@@ -116,7 +117,6 @@ def setup_agent():
 agent = setup_agent()
 
 def ask_agent(query, retries=2):
-    """Returns (answer_text, tool_used, sources_list)"""
     for attempt in range(retries):
         try:
             result = agent.invoke({"messages": [("user", query)]})
@@ -138,17 +138,15 @@ def ask_agent(query, retries=2):
                 continue
             return f"⚠️ Error: {e}", None, []
 
-# --- Tool badge helper ---
 def tool_badge_html(tool_used):
     badges = {
-        "search_documents": ("📄 Documents se", "badge-doc"),
-        "web_search": ("🌐 Web Search se", "badge-web"),
-        "calculator": ("🔢 Calculator se", "badge-calc"),
+        "search_documents": ("📄 From Documents", "badge-doc"),
+        "web_search": ("🌐 From Web Search", "badge-web"),
+        "calculator": ("🔢 From Calculator", "badge-calc"),
     }
     label, cls = badges.get(tool_used, ("💭 General Knowledge", "badge-none"))
     return f'<span class="tool-badge {cls}">{label}</span>'
 
-# --- Chat history ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -157,25 +155,24 @@ for msg in st.session_state.messages:
         if msg["role"] == "assistant" and msg.get("tool_used") is not None:
             st.markdown(tool_badge_html(msg["tool_used"]), unsafe_allow_html=True)
         st.markdown(msg["content"])
-        if msg.get("sources"):
-            with st.expander("📚 Source chunks dekho"):
+        if msg.get("tool_used") == "search_documents" and msg.get("sources"):
+            with st.expander("📚 View source chunks"):
                 for i, src in enumerate(msg["sources"], 1):
                     st.markdown(f"**Chunk {i}:**")
                     st.text(src[:500] + ("..." if len(src) > 500 else ""))
 
-# --- Chat input ---
-if prompt := st.chat_input("Apna sawal likho..."):
+if prompt := st.chat_input("Ask anything..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Soch raha hoon..."):
+        with st.spinner("Thinking..."):
             answer, tool_used, sources = ask_agent(prompt)
             st.markdown(tool_badge_html(tool_used), unsafe_allow_html=True)
             st.markdown(answer)
-            if sources:
-                with st.expander("📚 Source chunks dekho"):
+            if tool_used == "search_documents" and sources:
+                with st.expander("📚 View source chunks"):
                     for i, src in enumerate(sources, 1):
                         st.markdown(f"**Chunk {i}:**")
                         st.text(src[:500] + ("..." if len(src) > 500 else ""))
