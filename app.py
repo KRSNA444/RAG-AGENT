@@ -143,8 +143,9 @@ def ask_agent(query, retries=2):
             answer = messages[-1].content
             return answer, tool_used, sources
         except Exception as e:
-            if "tool_use_failed" in str(e) and attempt < retries - 1:
-                time.sleep(1)
+            error_str = str(e)
+            if ("tool_use_failed" in error_str or "rate_limit" in error_str or "429" in error_str) and attempt < retries - 1:
+                time.sleep(8)
                 continue
             return f"⚠️ Error: {e}", None, []
 
