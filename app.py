@@ -10,6 +10,14 @@ from rag_engine import RAGEngine
 
 load_dotenv()
 
+# Load keys from Streamlit secrets if available (for cloud deployment)
+try:
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+    if "TAVILY_API_KEY" in st.secrets:
+        os.environ["TAVILY_API_KEY"] = st.secrets["TAVILY_API_KEY"]
+except Exception:
+    pass  # No secrets.toml locally — that's fine, .env will be used instead
 st.set_page_config(page_title="RAG Agent", page_icon="🤖", layout="centered")
 
 st.markdown("""
