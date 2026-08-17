@@ -126,10 +126,10 @@ def setup_agent():
 
 agent = setup_agent()
 
-def ask_agent(query, retries=2):
+def ask_agent(chat_history, retries=2):
     for attempt in range(retries):
         try:
-            result = agent.invoke({"messages": [("user", query)]})
+            result = agent.invoke({"messages": chat_history})
             messages = result["messages"]
 
             tool_used = None
@@ -172,14 +172,20 @@ for msg in st.session_state.messages:
                     st.markdown(f"**Chunk {i}:**")
                     st.text(src[:500] + ("..." if len(src) > 500 else ""))
 
-if prompt := st.chat_input("Ask anything..."):
+if prompt := st.chat_input("Ask Anything..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # Build conversation history for the agent (last 10 messages to control token usage)
+    chat_history = []
+    for msg in st.session_state.messages[-10:]:
+        role = "user" if msg["role"] == "user" else "assistant"
+        chat_history.append((role, msg["content"]))
+
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            answer, tool_used, sources = ask_agent(prompt)
+            answer, tool_used, sources = ask_agent(chat_history)
             st.markdown(tool_badge_html(tool_used), unsafe_allow_html=True)
             st.markdown(answer)
             if tool_used == "search_documents" and sources:
