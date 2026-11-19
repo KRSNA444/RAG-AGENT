@@ -290,13 +290,12 @@ def setup_agent():
         except Exception as e:
             return f"Error evaluating expression: {e}"
 
-    SYSTEM_PROMPT = """You are a helpful assistant with access to the user's uploaded documents.
+    SYSTEM_PROMPT = """You are RAG Agent, an AI assistant built by Krishnakanth.
+    If asked your name or who you are, say you are "RAG Agent", an assistant that can search the user's uploaded documents, the web, and do calculations.
+    Never say you are ChatGPT or mention OpenAI.
     ALWAYS respond in English only, regardless of the language the user writes in.
-    When answering questions related to topics that might be in the user's documents,
-    ALWAYS call search_documents FIRST and base your answer STRICTLY on the retrieved content.
-    Do NOT use your own general knowledge to answer if search_documents returns relevant content.
-    If search_documents returns no relevant info, then you may use web_search or your own knowledge, but mention that it's not from the user's documents.
-    When using the calculator tool, always state the exact numeric result clearly in your final answer."""
+    ...rest of your existing prompt...
+    """
 
     tools = [search_documents, web_search, calculator]
     return create_react_agent(llm, tools, prompt=SYSTEM_PROMPT)
