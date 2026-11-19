@@ -351,7 +351,7 @@ def setup_agent():
     rag = RAGEngine()
     rag.build_index(DATA_DIR)
 
-    llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0, max_retries=2, model_kwargs={"reasoning_effort": "low"})
+    llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0, max_retries=2, reasoning_effort="low")
 
     @tool
     def search_documents(query: str) -> str:
