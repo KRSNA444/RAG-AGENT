@@ -351,7 +351,7 @@ def setup_agent():
     rag = RAGEngine()
     rag.build_index(DATA_DIR)
 
-    llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0, max_retries=2)
+    llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0, max_retries=2, model_kwargs={"reasoning_effort": "low"})
 
     @tool
     def search_documents(query: str) -> str:
@@ -453,7 +453,7 @@ def stream_words(text):
     """Typing effect for the final answer."""
     for word in text.split(" "):
         yield word + " "
-        time.sleep(0.02)
+        time.sleep(0.004)
 
 
 # ---------------------------------------------------------------------------
