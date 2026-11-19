@@ -63,7 +63,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     to   { background-position: 30% 20%, 70% 80%; }
 }
 
-.block-container { max-width: 820px; padding-top: 2rem; padding-bottom: 7rem; }
+.block-container { max-width: 780px; padding-top: 2rem; padding-bottom: 7rem; }
 
 /* ---- Sidebar ---- */
 section[data-testid="stSidebar"] {
@@ -142,13 +142,65 @@ section[data-testid="stSidebar"] h2 {
 .fcard h5 { margin: 28px 0 0; font-size: 14.5px; font-weight: 500; color: var(--text); }
 .fcard p { margin: 6px 0 0; font-size: 13px; color: var(--dim); line-height: 1.5; }
 
-/* ---- Chat messages ---- */
+/* ---- Chat messages (ChatGPT / Claude style) ---- */
 [data-testid="stChatMessage"] {
-    background: rgba(20,16,27,0.75) !important;
-    border: 1px solid var(--border);
-    border-radius: 16px !important;
-    backdrop-filter: blur(8px);
-    animation: msgIn .45s cubic-bezier(.2,.8,.2,1);
+    background: transparent !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    padding: 6px 0 !important;
+    animation: msgIn .4s cubic-bezier(.2,.8,.2,1);
+}
+
+/* hide user avatar only */
+[data-testid="stChatMessageAvatarUser"] { display: none !important; }
+
+/* user message: right-aligned bubble */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    flex-direction: row-reverse;
+    margin-left: auto;
+    width: fit-content;
+    max-width: 75%;
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 20px 20px 4px 20px !important;
+    padding: 10px 18px !important;
+}
+
+/* assistant message: plain text, a bit larger and airy */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+    font-size: 16px;
+    line-height: 1.75;
+}
+
+/* ---- Gemini-style animated assistant avatar ---- */
+[data-testid="stChatMessageAvatarAssistant"] {
+    display: flex !important;
+    position: relative;
+    width: 34px; height: 34px;
+    flex-shrink: 0;
+    background: transparent !important;
+    color: transparent !important;
+    font-size: 0 !important;
+}
+/* hide the default emoji / icon */
+[data-testid="stChatMessageAvatarAssistant"] > * { display: none !important; }
+
+/* rotating colour glow behind the star */
+[data-testid="stChatMessageAvatarAssistant"]::before {
+    content: "";
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #4285f4, #a855f7, #ec4899, #22d3ee, #4285f4);
+    filter: blur(10px);
+    opacity: .65;
+    animation: spin 4s linear infinite;
+}
+/* 4-point sparkle */
+[data-testid="stChatMessageAvatarAssistant"]::after {
+    content: "";
+    position: absolute; inset: 3px;
+    background: linear-gradient(135deg, #8ab4ff, #c084fc, #f472b6);
+    clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+    animation: sparkle 2.4s ease-in-out infinite;
 }
 
 /* ---- Tool badge ---- */
@@ -180,25 +232,38 @@ div[data-testid="stButton"] > button:hover {
     transform: translateY(-3px);
 }
 
-/* ---- Chat input ---- */
+/* ---- Chat input (pill) ---- */
 [data-testid="stBottom"] > div { background: transparent !important; }
 [data-testid="stChatInput"] {
-    border-radius: 20px !important;
-    background: rgba(13,10,18,0.9) !important;
-    border: 1px solid rgba(168,85,247,0.45) !important;
+    border-radius: 999px !important;
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
     transition: box-shadow .3s ease, border-color .3s ease;
 }
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] textarea { background: transparent !important; }
 [data-testid="stChatInput"]:focus-within {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 1px var(--accent), 0 0 40px var(--glow) !important;
+    border-color: rgba(168,85,247,0.6) !important;
+    box-shadow: 0 0 0 1px rgba(168,85,247,0.4), 0 0 30px rgba(168,85,247,0.2) !important;
 }
-[data-testid="stChatInput"] button { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; border-radius: 50% !important; }
+[data-testid="stChatInput"] button {
+    background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
+    border-radius: 50% !important;
+}
 
 /* ---- Status box (agent steps) ---- */
 [data-testid="stStatus"] {
     background: rgba(255,255,255,0.03) !important;
     border: 1px solid var(--border) !important;
     border-radius: 14px !important;
+}
+/* shimmering "Agent is thinking…" text, like Gemini's loading state */
+[data-testid="stStatus"] summary p {
+    background: linear-gradient(90deg, #8d8698 20%, #fff 50%, #8d8698 80%);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 2.5s linear infinite;
 }
 
 /* ---- Expander ---- */
@@ -212,6 +277,7 @@ div[data-testid="stButton"] > button:hover {
 @keyframes ring   { 0% { transform: scale(.9); opacity: .8; } 100% { transform: scale(1.8); opacity: 0; } }
 @keyframes shine  { to { background-position: 200% center; } }
 @keyframes pulse  { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes sparkle { 0%,100% { transform: scale(.9) rotate(0deg); } 50% { transform: scale(1.2) rotate(90deg); } }
 @keyframes fadeUp   { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 @keyframes msgIn    { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
@@ -257,7 +323,7 @@ with st.sidebar:
     st.caption("Model · openai/gpt-oss-20b (Groq)")
 
 # ---------------------------------------------------------------------------
-# Agent setup (unchanged logic)
+# Agent setup
 # ---------------------------------------------------------------------------
 @st.cache_resource
 def setup_agent():
@@ -294,8 +360,11 @@ def setup_agent():
     If asked your name or who you are, say you are "RAG Agent", an assistant that can search the user's uploaded documents, the web, and do calculations.
     Never say you are ChatGPT or mention OpenAI.
     ALWAYS respond in English only, regardless of the language the user writes in.
-    ...rest of your existing prompt...
-    """
+    When answering questions related to topics that might be in the user's documents,
+    ALWAYS call search_documents FIRST and base your answer STRICTLY on the retrieved content.
+    Do NOT use your own general knowledge to answer if search_documents returns relevant content.
+    If search_documents returns no relevant info, then you may use web_search or your own knowledge, but mention that it's not from the user's documents.
+    When using the calculator tool, always state the exact numeric result clearly in your final answer."""
 
     tools = [search_documents, web_search, calculator]
     return create_react_agent(llm, tools, prompt=SYSTEM_PROMPT)
