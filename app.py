@@ -258,9 +258,23 @@ div[data-testid="stButton"] > button:hover {
     border-color: rgba(168,85,247,0.6) !important;
     box-shadow: 0 0 0 1px rgba(168,85,247,0.4), 0 0 30px rgba(168,85,247,0.2) !important;
 }
-[data-testid="stChatInput"] button {
+/* send button = purple gradient circle */
+[data-testid="stChatInputSubmitButton"] {
     background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
     border-radius: 50% !important;
+}
+/* + attach button = subtle round ghost button */
+[data-testid="stChatInputFileUploadButton"],
+[data-testid="stChatInput"] button:not([data-testid="stChatInputSubmitButton"]) {
+    border-radius: 50% !important;
+    color: #cfc8d9 !important;
+    transition: all .25s ease !important;
+}
+[data-testid="stChatInputFileUploadButton"]:hover,
+[data-testid="stChatInput"] button:not([data-testid="stChatInputSubmitButton"]):hover {
+    background: rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+    transform: rotate(90deg);
 }
 
 /* ---- Status box (agent steps) ---- */
@@ -319,12 +333,7 @@ with st.sidebar:
 
     st.divider()
 
-    uploaded_file = st.file_uploader("Add a new PDF", type="pdf")
-    if uploaded_file is not None:
-        save_path = os.path.join(DATA_DIR, uploaded_file.name)
-        with open(save_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.success(f"{uploaded_file.name} added. Rebuild the index below.")
+    st.caption("Tip: tap the ＋ in the chat box to add a PDF.")
 
     if st.button("⟳ Rebuild Index", use_container_width=True):
         st.cache_resource.clear()
@@ -498,7 +507,27 @@ for msg in st.session_state.messages:
 # ---------------------------------------------------------------------------
 # Input handling (chat box OR clicked suggestion chip)
 # ---------------------------------------------------------------------------
-typed_prompt = st.chat_input("Ask anything...")
+submission = st.chat_input(
+    "Ask anything...",
+    accept_file=True,
+    file_type=["pdf"],
+)
+
+typed_prompt = None
+if submission:
+    typed_prompt = (getattr(submission, "text", "") or "").strip() or None
+    new_files = getattr(submission, "files", None) or []
+    if new_files:
+        for f in new_files:
+            with open(os.path.join(DATA_DIR, f.name), "wb") as out:
+                out.write(f.getbuffer())
+        st.cache_resource.clear()
+        with st.spinner("Indexing your document..."):
+            agent = setup_agent()
+        st.toast(f"Added {', '.join(f.name for f in new_files)} to the knowledge base", icon="📄")
+        if not typed_prompt:
+            st.rerun()  # refresh the sidebar document list
+
 prompt = typed_prompt or st.session_state.pending_prompt
 st.session_state.pending_prompt = None
 
