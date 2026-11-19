@@ -18,7 +18,7 @@ try:
 except Exception:
     pass
 
-st.set_page_config(page_title="RAG Agent", page_icon="◈", layout="wide")
+st.set_page_config(page_title="RAG Agent", page_icon="◈", layout="wide", initial_sidebar_state="expanded")
 
 DATA_DIR = "data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -467,6 +467,22 @@ if "pending_prompt" not in st.session_state:
 # ---------------------------------------------------------------------------
 # Empty state (hero) or compact header
 # ---------------------------------------------------------------------------
+with st.popover("?? Documents"):
+    _pdfs = sorted(f for f in os.listdir(DATA_DIR) if f.endswith(".pdf"))
+    if _pdfs:
+        for _f in _pdfs:
+            st.markdown(f"?? {_f}")
+    else:
+        st.caption("No documents loaded yet.")
+    st.caption("Tap the ? in the chat box to add a PDF.")
+    if st.button("? Rebuild Index", key="rebuild_main", use_container_width=True):
+        st.cache_resource.clear()
+        st.session_state.messages = []
+        st.rerun()
+    if st.button("? New Chat", key="newchat_main", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+
 if not st.session_state.messages:
     st.markdown("""
     <div class="hero">
