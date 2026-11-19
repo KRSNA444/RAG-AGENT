@@ -18,7 +18,10 @@ try:
 except Exception:
     pass
 
-st.set_page_config(page_title="RAG Agent", page_icon="◈", layout="centered")
+st.set_page_config(page_title="RAG Agent", page_icon="◈", layout="wide")
+
+DATA_DIR = "data"
+os.makedirs(DATA_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Design system
@@ -29,152 +32,210 @@ st.markdown("""
 
 <style>
 :root {
-    --bg: #0b0f1a;
-    --bg-glow: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(96, 100, 255, 0.15), transparent);
-    --surface: #131829;
-    --surface-2: #1a2036;
-    --border: #262c45;
-    --text: #e6e9f5;
-    --text-dim: #8890b5;
-    --accent: #7c85ff;
-    --accent-glow: rgba(124, 133, 255, 0.35);
-    --doc: #34d399;
-    --web: #38bdf8;
-    --calc: #fbbf24;
-    --none: #8890b5;
+    --bg: #050407;
+    --panel: #0d0a12;
+    --card: #14101b;
+    --border: rgba(255,255,255,0.08);
+    --text: #f2eef7;
+    --dim: #8d8698;
+    --accent: #a855f7;
+    --accent2: #6366f1;
+    --glow: rgba(168,85,247,0.35);
+    --doc: #34d399; --web: #38bdf8; --calc: #fbbf24; --none: #8d8698;
 }
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
+/* hide default chrome */
+#MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
+
+/* ---- Animated background ---- */
 .stApp {
     background-color: var(--bg);
-    background-image: var(--bg-glow);
+    background-image:
+        radial-gradient(120% 80% at 85% -10%, rgba(168,85,247,0.28), transparent 55%),
+        radial-gradient(100% 70% at 0% 100%, rgba(99,102,241,0.16), transparent 60%);
+    background-size: 140% 140%, 140% 140%;
+    animation: bgDrift 16s ease-in-out infinite alternate;
+}
+@keyframes bgDrift {
+    from { background-position: 0% 0%, 100% 100%; }
+    to   { background-position: 30% 20%, 70% 80%; }
 }
 
+.block-container { max-width: 820px; padding-top: 2rem; padding-bottom: 7rem; }
+
+/* ---- Sidebar ---- */
 section[data-testid="stSidebar"] {
-    background-color: var(--surface);
+    background-color: #08060c;
     border-right: 1px solid var(--border);
 }
+section[data-testid="stSidebar"] h2 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 18px;
+}
+.doc-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 10px; font-size: 14px; color: #cfc8d9;
+    transition: all .25s ease;
+}
+.doc-item:hover { background: rgba(255,255,255,0.06); transform: translateX(4px); color: #fff; }
+.doc-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #22c55e; box-shadow: 0 0 8px #22c55e;
+    animation: pulse 2s infinite;
+}
+.brand-logo {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--accent), var(--accent2), #22d3ee, var(--accent));
+    animation: spin 8s linear infinite;
+    display: inline-block; vertical-align: middle; margin-right: 10px;
+    -webkit-mask: radial-gradient(circle, transparent 9px, #000 10px);
+            mask: radial-gradient(circle, transparent 9px, #000 10px);
+}
 
-/* ---- Header ---- */
-.agent-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 4px;
-    animation: fadeDown 0.5s ease;
+/* ---- Hero (empty state) ---- */
+.hero { text-align: center; padding: 6vh 0 28px; animation: fadeUp .8s ease both; }
+.orb {
+    width: 84px; height: 84px; margin: 0 auto 26px; border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 30% 28%, #f0abfc, #a855f7 35%, #4338ca 70%, #1e1b4b);
+    box-shadow: 0 0 60px rgba(168,85,247,0.6), inset 0 0 20px rgba(255,255,255,0.25);
+    animation: float 4s ease-in-out infinite;
 }
-.agent-header .mark {
-    width: 42px; height: 42px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent), #4f46e5);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; font-weight: 700; color: white;
-    box-shadow: 0 0 24px var(--accent-glow);
-    flex-shrink: 0;
+.orb::after {
+    content: ""; position: absolute; inset: -14px; border-radius: 50%;
+    border: 1px solid rgba(168,85,247,0.4); animation: ring 3s ease-out infinite;
 }
-.agent-header h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 28px; font-weight: 700; margin: 0;
-    background: linear-gradient(90deg, #ffffff, #aab0e8 60%, var(--accent));
+.hero h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 600;
+    letter-spacing: -0.5px; margin: 0;
+    background: linear-gradient(90deg, #fff, #d8b4fe, #fff);
     background-size: 200% auto;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    animation: shimmer 6s linear infinite;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 5s linear infinite;
 }
-.agent-sub {
-    color: var(--text-dim); font-size: 14.5px; margin: 6px 0 26px 0;
-    animation: fadeDown 0.6s ease;
-}
-@keyframes shimmer { to { background-position: 200% center; } }
-@keyframes fadeDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.hero p { color: var(--dim); margin-top: 10px; font-size: 15px; }
 
-/* ---- Chat bubbles ---- */
+/* ---- Compact header (after first message) ---- */
+.mini-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; animation: fadeDown .5s ease; }
+.mini-orb {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 28%, #f0abfc, #a855f7 40%, #4338ca);
+    box-shadow: 0 0 20px rgba(168,85,247,0.6); animation: float 4s ease-in-out infinite;
+}
+.mini-header span { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 600; }
+
+/* ---- Feature cards ---- */
+.card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+.fcard {
+    padding: 16px; border-radius: 16px; background: rgba(13,10,18,0.8);
+    border: 1px solid var(--border); transition: all .3s ease; animation: fadeUp .7s both;
+}
+.fcard:nth-child(1) { animation-delay: .35s; }
+.fcard:nth-child(2) { animation-delay: .5s; }
+.fcard:nth-child(3) { animation-delay: .65s; }
+.fcard:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 12px 30px rgba(168,85,247,0.25); }
+.fcard .tag {
+    float: right; font-size: 11px; padding: 4px 10px; border-radius: 999px;
+    background: rgba(255,255,255,0.08); font-family: 'JetBrains Mono', monospace;
+}
+.fcard h5 { margin: 28px 0 0; font-size: 14.5px; font-weight: 500; color: var(--text); }
+.fcard p { margin: 6px 0 0; font-size: 13px; color: var(--dim); line-height: 1.5; }
+
+/* ---- Chat messages ---- */
 [data-testid="stChatMessage"] {
-    background-color: var(--surface) !important;
+    background: rgba(20,16,27,0.75) !important;
     border: 1px solid var(--border);
-    border-radius: 14px !important;
-    animation: riseIn 0.35s ease;
-}
-@keyframes riseIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    border-radius: 16px !important;
+    backdrop-filter: blur(8px);
+    animation: msgIn .45s cubic-bezier(.2,.8,.2,1);
 }
 
-/* ---- Tool badge with pulsing status dot ---- */
+/* ---- Tool badge ---- */
 .tool-badge {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 4px 12px 4px 10px; border-radius: 20px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600;
     margin-bottom: 10px; border: 1px solid transparent;
 }
-.tool-badge .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    animation: pulse 1.8s ease-in-out infinite;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
-    50% { opacity: 0.6; box-shadow: 0 0 0 4px transparent; }
-}
-.badge-doc { background: rgba(52,211,153,0.1); color: var(--doc); border-color: rgba(52,211,153,0.25); }
-.badge-web { background: rgba(56,189,248,0.1); color: var(--web); border-color: rgba(56,189,248,0.25); }
-.badge-calc { background: rgba(251,191,36,0.1); color: var(--calc); border-color: rgba(251,191,36,0.25); }
-.badge-none { background: rgba(136,144,181,0.1); color: var(--none); border-color: rgba(136,144,181,0.25); }
+.tool-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.8s ease-in-out infinite; }
+.badge-doc  { background: rgba(52,211,153,0.1);  color: var(--doc);  border-color: rgba(52,211,153,0.25); }
+.badge-web  { background: rgba(56,189,248,0.1);  color: var(--web);  border-color: rgba(56,189,248,0.25); }
+.badge-calc { background: rgba(251,191,36,0.1);  color: var(--calc); border-color: rgba(251,191,36,0.25); }
+.badge-none { background: rgba(141,134,152,0.1); color: var(--none); border-color: rgba(141,134,152,0.25); }
 
-/* ---- Suggestion chips (empty state) ---- */
-.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+/* ---- Buttons / chips ---- */
 div[data-testid="stButton"] > button {
-    background-color: var(--surface-2) !important;
+    background: rgba(0,0,0,0.5) !important;
     border: 1px solid var(--border) !important;
-    border-radius: 10px !important;
+    border-radius: 999px !important;
     color: var(--text) !important;
     font-size: 13.5px !important;
-    padding: 8px 14px !important;
-    transition: all 0.2s ease !important;
+    padding: 8px 16px !important;
+    transition: all .25s ease !important;
 }
 div[data-testid="stButton"] > button:hover {
     border-color: var(--accent) !important;
-    box-shadow: 0 0 14px var(--accent-glow) !important;
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--glow) !important;
+    transform: translateY(-3px);
 }
 
 /* ---- Chat input ---- */
+[data-testid="stBottom"] > div { background: transparent !important; }
 [data-testid="stChatInput"] {
-    border-radius: 14px !important;
-    border: 1px solid var(--border) !important;
-    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+    border-radius: 20px !important;
+    background: rgba(13,10,18,0.9) !important;
+    border: 1px solid rgba(168,85,247,0.45) !important;
+    transition: box-shadow .3s ease, border-color .3s ease;
 }
 [data-testid="stChatInput"]:focus-within {
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+    box-shadow: 0 0 0 1px var(--accent), 0 0 40px var(--glow) !important;
+}
+[data-testid="stChatInput"] button { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; border-radius: 50% !important; }
+
+/* ---- Status box (agent steps) ---- */
+[data-testid="stStatus"] {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
 }
 
-/* ---- Source expander ---- */
-.streamlit-expanderHeader {
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 12.5px !important;
+/* ---- Expander ---- */
+.streamlit-expanderHeader, [data-testid="stExpander"] summary {
+    font-family: 'JetBrains Mono', monospace !important; font-size: 12.5px !important;
 }
 
-/* ---- Sidebar section labels ---- */
-section[data-testid="stSidebar"] h2 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 16px;
-}
+/* ---- Keyframes ---- */
+@keyframes spin   { to { transform: rotate(360deg); } }
+@keyframes float  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes ring   { 0% { transform: scale(.9); opacity: .8; } 100% { transform: scale(1.8); opacity: 0; } }
+@keyframes shine  { to { background-position: 200% center; } }
+@keyframes pulse  { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes fadeUp   { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes msgIn    { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 700px) { .card-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 26px; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 """, unsafe_allow_html=True)
-
-DATA_DIR = "data"
 
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.header("◈ Knowledge Base")
+    st.markdown('<h2><span class="brand-logo"></span>RAG Agent</h2>', unsafe_allow_html=True)
 
+    if st.button("＋ New Chat", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+
+    st.markdown("##### Knowledge Base")
     existing_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".pdf")]
     if existing_files:
         for f in existing_files:
-            st.markdown(f"📄 &nbsp;{f}")
+            st.markdown(f'<div class="doc-item"><span class="doc-dot"></span>{f}</div>', unsafe_allow_html=True)
     else:
         st.caption("No documents loaded yet.")
 
@@ -193,27 +254,10 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-
-    if st.button("🗑 Clear Chat", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
-
-    st.divider()
     st.caption("Model · openai/gpt-oss-20b (Groq)")
 
 # ---------------------------------------------------------------------------
-# Header
-# ---------------------------------------------------------------------------
-st.markdown("""
-<div class="agent-header">
-    <div class="mark">◈</div>
-    <h1>RAG Agent</h1>
-</div>
-<p class="agent-sub">Ask about your documents, the web, or run a quick calculation — I'll pick the right tool.</p>
-""", unsafe_allow_html=True)
-
-# ---------------------------------------------------------------------------
-# Agent setup
+# Agent setup (unchanged logic)
 # ---------------------------------------------------------------------------
 @st.cache_resource
 def setup_agent():
@@ -257,15 +301,28 @@ def setup_agent():
     tools = [search_documents, web_search, calculator]
     return create_react_agent(llm, tools, prompt=SYSTEM_PROMPT)
 
+
 with st.spinner("Booting up the knowledge base..."):
     agent = setup_agent()
 
+TOOL_LABELS = {
+    "search_documents": "Searching your documents (FAISS)",
+    "web_search": "Searching the web (Tavily)",
+    "calculator": "Running calculator",
+}
 
-def ask_agent(chat_history, retries=2):
+
+def ask_agent(chat_history, status=None, retries=2):
+    """Runs the agent while streaming each tool call into the status box."""
     for attempt in range(retries):
         try:
-            result = agent.invoke({"messages": chat_history})
-            messages = result["messages"]
+            messages = None
+            for chunk in agent.stream({"messages": chat_history}, stream_mode="values"):
+                messages = chunk["messages"]
+                calls = getattr(messages[-1], "tool_calls", None)
+                if calls and status is not None:
+                    for c in calls:
+                        status.write(f"🔧 {TOOL_LABELS.get(c['name'], c['name'])}…")
 
             tool_used = None
             sources = []
@@ -275,11 +332,12 @@ def ask_agent(chat_history, retries=2):
                     if msg.name == "search_documents":
                         sources.append(msg.content)
 
-            answer = messages[-1].content
-            return answer, tool_used, sources
+            return messages[-1].content, tool_used, sources
         except Exception as e:
             error_str = str(e)
             if ("tool_use_failed" in error_str or "rate_limit" in error_str or "429" in error_str) and attempt < retries - 1:
+                if status is not None:
+                    status.write("⏳ Rate limited, retrying…")
                 time.sleep(8)
                 continue
             return f"⚠️ Error: {e}", None, []
@@ -302,6 +360,13 @@ def render_sources(sources):
             st.text(src[:500] + ("..." if len(src) > 500 else ""))
 
 
+def stream_words(text):
+    """Typing effect for the final answer."""
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.02)
+
+
 # ---------------------------------------------------------------------------
 # Chat state
 # ---------------------------------------------------------------------------
@@ -311,20 +376,33 @@ if "pending_prompt" not in st.session_state:
     st.session_state.pending_prompt = None
 
 # ---------------------------------------------------------------------------
-# Empty state — suggestion chips
+# Empty state (hero) or compact header
 # ---------------------------------------------------------------------------
 if not st.session_state.messages:
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    suggestions = [
-        "What is HTML used for?",
-        "Explain CSS selectors",
-        "45 * 12 kitna hota hai?",
-    ]
+    st.markdown("""
+    <div class="hero">
+        <div class="orb"></div>
+        <h1>Ready to Ask Your Documents?</h1>
+        <p>Search your knowledge base, the web, or run a calculation — I'll pick the right tool.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    suggestions = ["What is RAG?", "Explain AI agents", "How does vector search work?"]
     cols = st.columns(len(suggestions))
     for col, s in zip(cols, suggestions):
         with col:
             if st.button(s, use_container_width=True, key=f"chip_{s}"):
                 st.session_state.pending_prompt = s
+
+    st.markdown("""
+    <div class="card-grid">
+        <div class="fcard"><span class="tag">FAISS</span><h5>Document Q&amp;A</h5><p>Answers grounded in your uploaded PDFs, with source chunks.</p></div>
+        <div class="fcard"><span class="tag">Tavily</span><h5>Web Search</h5><p>Live results when the answer isn't in your documents.</p></div>
+        <div class="fcard"><span class="tag">LangGraph</span><h5>Smart Agent</h5><p>Automatically picks the best tool for every question.</p></div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown('<div class="mini-header"><div class="mini-orb"></div><span>RAG Agent</span></div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Render history
@@ -340,7 +418,7 @@ for msg in st.session_state.messages:
 # ---------------------------------------------------------------------------
 # Input handling (chat box OR clicked suggestion chip)
 # ---------------------------------------------------------------------------
-typed_prompt = st.chat_input("Ask something...")
+typed_prompt = st.chat_input("Ask anything...")
 prompt = typed_prompt or st.session_state.pending_prompt
 st.session_state.pending_prompt = None
 
@@ -355,10 +433,12 @@ if prompt:
         chat_history.append((role, msg["content"]))
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            answer, tool_used, sources = ask_agent(chat_history)
+        with st.status("Agent is thinking…", expanded=True) as status:
+            answer, tool_used, sources = ask_agent(chat_history, status)
+            status.update(label="Done", state="complete", expanded=False)
+
         st.markdown(tool_badge_html(tool_used), unsafe_allow_html=True)
-        st.markdown(answer)
+        st.write_stream(stream_words(answer))
         if tool_used == "search_documents" and sources:
             render_sources(sources)
 
@@ -366,6 +446,6 @@ if prompt:
         "role": "assistant",
         "content": answer,
         "tool_used": tool_used,
-        "sources": sources
+        "sources": sources,
     })
     st.rerun()
