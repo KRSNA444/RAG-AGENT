@@ -47,7 +47,14 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 /* hide default chrome */
-#MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
+#MainMenu, footer { visibility: hidden; }
+/* keep the header (it holds the sidebar toggle on mobile), just make it invisible */
+header[data-testid="stHeader"] { background: transparent !important; }
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stAppDeployButton"] { display: none !important; }
+[data-testid="stExpandSidebarButton"], [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarCollapseButton"] {
+    visibility: visible !important;
+    color: #fff !important;
+}
 
 /* ---- Animated background ---- */
 .stApp {
@@ -234,15 +241,20 @@ div[data-testid="stButton"] > button:hover {
 
 /* ---- Chat input (pill) ---- */
 [data-testid="stBottom"] > div { background: transparent !important; }
-[data-testid="stChatInput"] {
+/* remove every default border/background layer, then style ONE pill */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] * {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+[data-testid="stChatInput"] > div {
     border-radius: 999px !important;
     background: rgba(255,255,255,0.06) !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
     transition: box-shadow .3s ease, border-color .3s ease;
 }
-[data-testid="stChatInput"] > div,
-[data-testid="stChatInput"] textarea { background: transparent !important; }
-[data-testid="stChatInput"]:focus-within {
+[data-testid="stChatInput"] > div:focus-within {
     border-color: rgba(168,85,247,0.6) !important;
     box-shadow: 0 0 0 1px rgba(168,85,247,0.4), 0 0 30px rgba(168,85,247,0.2) !important;
 }
