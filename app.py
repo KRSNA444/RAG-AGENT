@@ -297,6 +297,21 @@ div[data-testid="stButton"] > button:hover {
     font-family: 'JetBrains Mono', monospace !important; font-size: 12.5px !important;
 }
 
+/* ---- Documents popover button ---- */
+[data-testid="stPopover"] > button, [data-testid="stPopoverButton"] {
+    background: linear-gradient(135deg, rgba(168,85,247,0.18), rgba(99,102,241,0.18)) !important;
+    border: 1px solid rgba(168,85,247,0.45) !important;
+    border-radius: 999px !important;
+    color: #f2eef7 !important;
+    padding: 6px 16px !important;
+    transition: all .25s ease !important;
+}
+[data-testid="stPopover"] > button:hover, [data-testid="stPopoverButton"]:hover {
+    box-shadow: 0 0 22px rgba(168,85,247,0.45) !important;
+    transform: translateY(-2px);
+}
+[data-testid="stPopover"] > button span[data-testid="stIconMaterial"] { color: #c084fc !important; }
+
 /* ---- Keyframes ---- */
 @keyframes spin   { to { transform: rotate(360deg); } }
 @keyframes float  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
@@ -467,19 +482,19 @@ if "pending_prompt" not in st.session_state:
 # ---------------------------------------------------------------------------
 # Empty state (hero) or compact header
 # ---------------------------------------------------------------------------
-with st.popover("?? Documents"):
-    _pdfs = sorted(f for f in os.listdir(DATA_DIR) if f.endswith(".pdf"))
+_pdfs = sorted(f for f in os.listdir(DATA_DIR) if f.endswith(".pdf"))
+with st.popover(f"Documents ({len(_pdfs)})", icon=":material/description:"):
     if _pdfs:
         for _f in _pdfs:
-            st.markdown(f"?? {_f}")
+            st.markdown(f'<div class="doc-item"><span class="doc-dot"></span>{_f}</div>', unsafe_allow_html=True)
     else:
         st.caption("No documents loaded yet.")
-    st.caption("Tap the ? in the chat box to add a PDF.")
-    if st.button("? Rebuild Index", key="rebuild_main", use_container_width=True):
+    st.caption("Tap the + in the chat box to add a PDF.")
+    if st.button("Rebuild Index", key="rebuild_main", icon=":material/refresh:", use_container_width=True):
         st.cache_resource.clear()
         st.session_state.messages = []
         st.rerun()
-    if st.button("? New Chat", key="newchat_main", use_container_width=True):
+    if st.button("New Chat", key="newchat_main", icon=":material/add:", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
